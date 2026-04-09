@@ -8,10 +8,7 @@ import yt_dlp
 from urllib.parse import urlparse, parse_qs
 
 PORT         = 9876
-BASE_DIR = r"D:\Extensions\yt-music-extension"
-DOWNLOAD_DIR = os.path.join(BASE_DIR, "YT-Music")
-
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+DOWNLOAD_DIR = os.path.join(os.path.expanduser("~"), "Downloads", "YT-Music")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 jobs        = {}
@@ -115,12 +112,28 @@ def download_worker(job_id, url, fmt):
 
     def hook(d):
         if d["status"] == "downloading":
-            try: pct = float(d.get("_percent_str", "0%").strip().replace("%", ""))
-            except: pct = 0
-            jobs[job_id]["percent"] = round(pct, 1)
-            jobs[job_id]["speed"]   = d.get("_speed_str", "").strip()
+            # Dùng bytes thực tế thay _percent_str (ổn định hơn trên yt-dlp mới)
+            downloaded = d.get("downloaded_bytes", 0) or 0
+            total      = d.get("total_bytes", 0) or d.get("total_bytes_estimate", 0) or 0
+            if total > 0:
+                pct = round(downloaded / total * 100, 1)
+            else:
+                # Fallback dùng _percent_str nếu không có bytes
+                try: pct = float(d.get("_percent_str", "0%").strip().replace("%",""))
+                except: pct = 0
+            # Format speed dễ đọc
+            speed_bps = d.get("speed", 0) or 0
+            if speed_bps > 1024*1024:
+                speed_str = f"{speed_bps/1024/1024:.1f} MB/s"
+            elif speed_bps > 1024:
+                speed_str = f"{speed_bps/1024:.0f} KB/s"
+            else:
+                speed_str = d.get("_speed_str", "").strip()
+            jobs[job_id]["percent"] = pct
+            jobs[job_id]["speed"]   = speed_str
         elif d["status"] == "finished":
             jobs[job_id]["percent"] = 100
+            jobs[job_id]["speed"]   = ""
 
     opts = {
         "format":         cfg["format"],

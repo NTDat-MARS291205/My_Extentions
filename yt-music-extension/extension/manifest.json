@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YT Music Saver",
-  "version": "2.0",
+  "version": "2.1",
   "description": "Tải nhạc YouTube, quản lý thư viện theo thể loại, kiểm tra trùng lặp",
   "permissions": ["activeTab", "scripting", "storage", "nativeMessaging"],
   "host_permissions": [
@@ -11,8 +11,12 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src http://localhost:9876"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": { "48": "icon.png" }
   },
   "content_scripts": [
     { "matches": ["https://www.youtube.com/*"], "js": ["content.js"] }
