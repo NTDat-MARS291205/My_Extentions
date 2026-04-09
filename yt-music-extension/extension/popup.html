@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>YT Music Saver</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1a1a25;
+      --border: #1e1e2e;
+      --accent: #e63946;
+      --accent2: #ff6b6b;
+      --text: #f0f0f5;
+      --muted: #6b6b80;
+      --success: #2dd4bf;
+      --warning: #fbbf24;
+      --r: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 360px; background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg,#1a0a0f,#0d0d1a);
+      padding: 13px 16px 11px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo { width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 10px rgba(230,57,70,.4);flex-shrink:0; }
+    .header-text h1 { font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:1.5px; }
+    .header-text p  { color:var(--muted);font-size:10px;font-weight:300;margin-top:1px; }
+    .server-toggle  { margin-left:auto;display:flex;align-items:center;gap:7px; }
+    .status-dot { width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .3s; }
+    .status-dot.online  { background:var(--success);box-shadow:0 0 6px var(--success); }
+    .status-dot.offline { background:var(--accent);box-shadow:0 0 6px var(--accent); }
+    .btn-server {
+      font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;
+      padding:4px 10px;border-radius:20px;border:1px solid var(--border);
+      background:var(--surface);color:var(--muted);cursor:pointer;transition:all .2s;letter-spacing:.3px;
+    }
+    .btn-server:hover { border-color:var(--accent);color:var(--accent2); }
+    .btn-server.running { border-color:var(--success);color:var(--success); }
+
+    /* ── Tabs ── */
+    .tabs { display:flex;border-bottom:1px solid var(--border); }
+    .tab-btn {
+      flex:1;padding:9px 0;background:none;border:none;color:var(--muted);
+      font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;
+      cursor:pointer;transition:all .2s;border-bottom:2px solid transparent;
+      display:flex;align-items:center;justify-content:center;gap:5px;
+    }
+    .tab-btn:hover { color:var(--text); }
+    .tab-btn.active { color:var(--accent2);border-bottom-color:var(--accent); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    /* ── Download tab ── */
+    .card {
+      margin:12px;background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--r);overflow:hidden;
+    }
+    .thumb-wrap { position:relative;width:100%;aspect-ratio:16/9;background:#0d0d15;overflow:hidden; }
+    .thumb-wrap img { width:100%;height:100%;object-fit:cover;opacity:.85; }
+    .play-icon { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.2); }
+    .play-icon svg { width:38px;height:38px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+    .playlist-badge {
+      position:absolute;top:7px;right:7px;background:rgba(251,191,36,.12);
+      border:1px solid var(--warning);color:var(--warning);font-size:10px;
+      font-weight:600;padding:2px 8px;border-radius:20px;display:none;
+    }
+    .duplicate-badge {
+      position:absolute;top:7px;left:7px;background:rgba(230,57,70,.15);
+      border:1px solid var(--accent);color:var(--accent2);font-size:10px;
+      font-weight:600;padding:2px 8px;border-radius:20px;display:none;
+    }
+    .card-body { padding:11px 12px; }
+    .video-title { font-weight:600;font-size:12.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+    .video-channel { margin-top:4px;color:var(--muted);font-size:11px;display:flex;align-items:center;gap:5px; }
+    .video-channel::before { content:'';display:inline-block;width:13px;height:13px;background:linear-gradient(135deg,#e63946,#ff6b6b);border-radius:50%;flex-shrink:0; }
+
+    .warning-box {
+      margin:0 12px 8px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);
+      border-radius:var(--r);padding:8px 11px;display:none;align-items:flex-start;gap:7px;
+    }
+    .warning-box p { color:var(--warning);font-size:11px;line-height:1.5; }
+
+    .duplicate-box {
+      margin:0 12px 8px;background:rgba(230,57,70,.07);border:1px solid rgba(230,57,70,.3);
+      border-radius:var(--r);padding:8px 11px;display:none;align-items:flex-start;gap:7px;
+    }
+    .duplicate-box p { color:var(--accent2);font-size:11px;line-height:1.5; }
+
+    /* Genre selector */
+    .section { margin:0 12px 9px; }
+    .section label { display:block;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px; }
+
+    .genre-row { display:flex;gap:6px;align-items:center; }
+    .genre-select {
+      flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);
+      border-radius:7px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:12px;
+      cursor:pointer;outline:none;appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b6b80'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;
+    }
+    .genre-select:focus { border-color:var(--accent); }
+    .btn-add-genre {
+      background:var(--surface);border:1px solid var(--border);color:var(--muted);
+      border-radius:7px;padding:7px 10px;cursor:pointer;font-size:14px;transition:all .15s;
+    }
+    .btn-add-genre:hover { border-color:var(--accent);color:var(--accent2); }
+
+    /* Format grid */
+    .format-grid { display:grid;grid-template-columns:1fr 1fr;gap:5px; }
+    .format-btn {
+      background:var(--surface);border:1px solid var(--border);color:var(--muted);
+      border-radius:7px;padding:7px;cursor:pointer;transition:all .15s;text-align:center;
+      font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;
+    }
+    .format-btn:hover { border-color:var(--accent);color:var(--text); }
+    .format-btn.active { background:rgba(230,57,70,.1);border-color:var(--accent);color:var(--accent2); }
+    .format-btn .fl { font-size:11px;font-weight:600;display:block; }
+    .format-btn .fd { font-size:10px;opacity:.7;margin-top:1px;display:block; }
+
+    /* Progress */
+    .progress-wrap { margin:0 12px 8px;display:none; }
+    .progress-bar-bg { background:var(--border);border-radius:4px;height:4px;overflow:hidden; }
+    .progress-bar { height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;width:0%;transition:width .3s; }
+    .progress-text { font-size:11px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between; }
+
+    /* Status */
+    .status-msg {
+      margin:0 12px 10px;padding:8px 11px;border-radius:var(--r);font-size:11.5px;display:none;align-items:center;gap:7px;
+    }
+    .status-msg.success { background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.3);color:var(--success); }
+    .status-msg.error   { background:rgba(230,57,70,.07);border:1px solid rgba(230,57,70,.3);color:var(--accent2); }
+    .status-msg.info    { background:rgba(107,107,128,.1);border:1px solid var(--border);color:var(--muted); }
+
+    .dl-btn {
+      display:block;width:calc(100% - 24px);margin:0 12px 12px;
+      background:var(--accent);color:white;border:none;border-radius:var(--r);
+      padding:12px;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;
+      cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+    }
+    .dl-btn::before { content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent 50%); }
+    .dl-btn:hover:not(:disabled) { background:#c1121f;transform:translateY(-1px);box-shadow:0 4px 16px rgba(230,57,70,.4); }
+    .dl-btn:disabled { background:var(--muted);cursor:not-allowed; }
+
+    .not-yt { padding:30px 18px;text-align:center;color:var(--muted); }
+    .not-yt .big { font-size:36px;margin-bottom:10px; }
+    .not-yt p { font-size:12px;line-height:1.6; }
+    .not-yt strong { color:var(--text); }
+
+    .divider { height:1px;background:var(--border);margin:0 12px 10px; }
+
+    /* ── Library tab ── */
+    .lib-header { padding:12px 12px 8px;display:flex;align-items:center;gap:8px; }
+    .lib-search {
+      flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);
+      border-radius:7px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;
+    }
+    .lib-search:focus { border-color:var(--accent); }
+    .lib-search::placeholder { color:var(--muted); }
+
+    .genre-filter { display:flex;gap:5px;padding:0 12px 8px;overflow-x:auto;scrollbar-width:none; }
+    .genre-filter::-webkit-scrollbar { display:none; }
+    .gf-btn {
+      white-space:nowrap;padding:4px 11px;border-radius:20px;border:1px solid var(--border);
+      background:var(--surface);color:var(--muted);font-family:'DM Sans',sans-serif;
+      font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;
+    }
+    .gf-btn:hover { border-color:var(--accent);color:var(--text); }
+    .gf-btn.active { background:rgba(230,57,70,.1);border-color:var(--accent);color:var(--accent2); }
+
+    .lib-list { max-height:320px;overflow-y:auto;padding:0 12px 12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent; }
+    .lib-empty { text-align:center;color:var(--muted);padding:30px 0;font-size:12px; }
+    .lib-empty .big { font-size:30px;margin-bottom:8px; }
+
+    .lib-item {
+      display:flex;align-items:center;gap:9px;padding:8px;margin-bottom:5px;
+      background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+      transition:border-color .15s;
+    }
+    .lib-item:hover { border-color:rgba(230,57,70,.3); }
+    .lib-thumb { width:52px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0; }
+    .lib-info { flex:1;min-width:0; }
+    .lib-title { font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .lib-meta  { font-size:10px;color:var(--muted);margin-top:2px;display:flex;gap:6px;align-items:center; }
+    .lib-genre-tag {
+      background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.25);
+      color:var(--accent2);padding:1px 6px;border-radius:10px;font-size:9.5px;font-weight:600;
+    }
+    .lib-del {
+      background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;
+      padding:3px 5px;border-radius:5px;transition:all .15s;flex-shrink:0;
+    }
+    .lib-del:hover { background:rgba(230,57,70,.1);color:var(--accent2); }
+
+    .lib-stats { padding:0 12px 8px;display:flex;gap:8px; }
+    .stat-box {
+      flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+      padding:7px 10px;text-align:center;
+    }
+    .stat-num { font-family:'Bebas Neue',cursive;font-size:20px;color:var(--accent2);line-height:1; }
+    .stat-lbl { font-size:9.5px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.5px; }
+
+    /* ── Server tab ── */
+    .server-panel { padding:14px 12px; }
+    .server-status-card {
+      background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+      padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;
+    }
+    .srv-icon { font-size:28px; }
+    .srv-info h3 { font-size:14px;font-weight:600; }
+    .srv-info p  { font-size:11px;color:var(--muted);margin-top:2px; }
+    .srv-badge {
+      margin-left:auto;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;
+    }
+    .srv-badge.online  { background:rgba(45,212,191,.1);border:1px solid var(--success);color:var(--success); }
+    .srv-badge.offline { background:rgba(230,57,70,.1);border:1px solid var(--accent);color:var(--accent2); }
+
+    .btn-srv-big {
+      width:100%;padding:13px;border:none;border-radius:var(--r);
+      font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;
+      cursor:pointer;transition:all .2s;margin-bottom:10px;
+    }
+    .btn-srv-big.start { background:var(--accent);color:#fff; }
+    .btn-srv-big.start:hover { background:#c1121f;box-shadow:0 4px 16px rgba(230,57,70,.4); }
+    .btn-srv-big.stop  { background:var(--surface);border:1px solid var(--border);color:var(--muted); }
+    .btn-srv-big.stop:hover  { border-color:var(--accent);color:var(--accent2); }
+
+    .srv-hint-box {
+      background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+      padding:11px 12px;font-size:11px;color:var(--muted);line-height:1.7;
+    }
+    .srv-hint-box code {
+      background:rgba(230,57,70,.1);color:var(--accent2);
+      padding:1px 6px;border-radius:4px;font-family:monospace;font-size:10px;
+    }
+    .srv-hint-box strong { color:var(--text); }
+
+    /* ── Genre modal ── */
+    .modal-overlay {
+      position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;
+      align-items:center;justify-content:center;z-index:100;display:none;
+    }
+    .modal {
+      background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+      padding:16px;width:280px;
+    }
+    .modal h3 { font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:1px;margin-bottom:12px; }
+    .modal input {
+      width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
+      border-radius:7px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;
+      outline:none;margin-bottom:10px;
+    }
+    .modal input:focus { border-color:var(--accent); }
+    .modal-btns { display:flex;gap:8px; }
+    .modal-btns button {
+      flex:1;padding:9px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;
+      font-weight:600;cursor:pointer;border:none;transition:all .2s;
+    }
+    .modal-btns .btn-ok     { background:var(--accent);color:#fff; }
+    .modal-btns .btn-ok:hover { background:#c1121f; }
+    .modal-btns .btn-cancel { background:var(--border);color:var(--muted); }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">🎵</div>
+  <div class="header-text">
+    <h1>YT Music Saver</h1>
+    <p>Tải nhạc YouTube về máy</p>
+  </div>
+  <div class="server-toggle">
+    <div class="status-dot" id="serverDot"></div>
+    <button class="btn-server" id="quickServerBtn">Offline</button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="download">⬇ Tải về</button>
+  <button class="tab-btn" data-tab="library">📚 Thư viện</button>
+  <button class="tab-btn" data-tab="server">🖥 Server</button>
+</div>
+
+<!-- ═══ TAB: DOWNLOAD ═══ -->
+<div class="tab-panel active" id="tab-download">
+
+  <div id="notYt" style="display:none" class="not-yt">
+    <div class="big">🎬</div>
+    <p>Hãy mở một video <strong>YouTube</strong><br>để sử dụng extension này.</p>
+  </div>
+
+  <div id="videoContent" style="display:none">
+
+    <div class="card">
+      <div class="thumb-wrap">
+        <img id="thumbnail" src="" alt="" />
+        <div class="play-icon">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,.5)" stroke="rgba(255,255,255,.25)" stroke-width="1"/>
+            <polygon points="10,8 17,12 10,16" fill="white"/>
+          </svg>
+        </div>
+        <div class="playlist-badge"  id="playlistBadge">📋 PLAYLIST</div>
+        <div class="duplicate-badge" id="dupBadge">⚠ ĐÃ CÓ</div>
+      </div>
+      <div class="card-body">
+        <div class="video-title" id="videoTitle">Đang tải...</div>
+        <div class="video-channel" id="videoChannel">–</div>
+      </div>
+    </div>
+
+    <div class="warning-box" id="playlistWarning">
+      <span>⚠️</span>
+      <p>Video trong <strong>playlist</strong> — chỉ tải đúng video này, bỏ qua toàn bộ list.</p>
+    </div>
+
+    <div class="duplicate-box" id="dupWarning">
+      <span>🔁</span>
+      <p id="dupWarningText">Video này <strong>đã có trong thư viện</strong>. Bạn vẫn muốn tải lại?</p>
+    </div>
+
+    <!-- Genre -->
+    <div class="section">
+      <label>Thể loại</label>
+      <div class="genre-row">
+        <select class="genre-select" id="genreSelect"></select>
+        <button class="btn-add-genre" id="addGenreBtn" title="Thêm thể loại">＋</button>
+      </div>
+    </div>
+
+    <!-- Format -->
+    <div class="section">
+      <label>Định dạng tải về</label>
+      <div class="format-grid">
+        <button class="format-btn active" data-format="mp3">
+          <span class="fl">🎵 MP3</span><span class="fd">Chỉ âm thanh</span>
+        </button>
+        <button class="format-btn" data-format="mp4_720">
+          <span class="fl">🎬 MP4 720p</span><span class="fd">Video + âm thanh</span>
+        </button>
+        <button class="format-btn" data-format="mp4_1080">
+          <span class="fl">🎬 MP4 1080p</span><span class="fd">Full HD</span>
+        </button>
+        <button class="format-btn" data-format="m4a">
+          <span class="fl">🔊 M4A</span><span class="fd">Chất lượng cao</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="progress-text"><span id="progressPct">0%</span><span id="progressSpeed">–</span></div>
+    </div>
+
+    <div class="status-msg" id="statusMsg"></div>
+    <button class="dl-btn" id="dlBtn">⬇ TẢI VỀ</button>
+
+  </div><!-- /videoContent -->
+</div><!-- /tab-download -->
+
+<!-- ═══ TAB: LIBRARY ═══ -->
+<div class="tab-panel" id="tab-library">
+  <div class="lib-stats">
+    <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Bài hát</div></div>
+    <div class="stat-box"><div class="stat-num" id="statGenres">0</div><div class="stat-lbl">Thể loại</div></div>
+    <div class="stat-box"><div class="stat-num" id="statFormats">0</div><div class="stat-lbl">Loại file</div></div>
+  </div>
+  <div class="lib-header">
+    <input class="lib-search" id="libSearch" type="text" placeholder="🔍  Tìm kiếm...">
+  </div>
+  <div class="genre-filter" id="genreFilter"></div>
+  <div class="lib-list" id="libList"></div>
+</div>
+
+<!-- ═══ TAB: SERVER ═══ -->
+<div class="tab-panel" id="tab-server">
+  <div class="server-panel">
+    <div class="server-status-card">
+      <div class="srv-icon" id="srvIcon">🔴</div>
+      <div class="srv-info">
+        <h3 id="srvTitle">Server chưa chạy</h3>
+        <p id="srvSubtitle">localhost:9876</p>
+      </div>
+      <div class="srv-badge offline" id="srvBadge">Offline</div>
+    </div>
+
+    <button class="btn-srv-big start" id="btnStartStop">▶ KHỞI ĐỘNG SERVER</button>
+
+    <div class="srv-hint-box">
+      <strong>Cách dùng nút Start/Stop:</strong><br>
+      1. Lần đầu: nhấn <strong>Start</strong> → chọn file <code>server.py</code><br>
+      2. Trình duyệt nhớ đường dẫn, lần sau tự động<br>
+      3. Server chạy nền, đóng popup vẫn hoạt động<br><br>
+      <strong>Hoặc chạy thủ công:</strong><br>
+      <code>python server.py</code> trong thư mục <code>server/</code>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal thêm thể loại ═══ -->
+<div class="modal-overlay" id="genreModal">
+  <div class="modal">
+    <h3>Thêm thể loại mới</h3>
+    <input type="text" id="genreInput" placeholder="VD: Nhạc trẻ, Ballad, V-Pop..." maxlength="30">
+    <div class="modal-btns">
+      <button class="btn-cancel" id="modalCancel">Huỷ</button>
+      <button class="btn-ok"     id="modalOk">Thêm</button>
+    </div>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
