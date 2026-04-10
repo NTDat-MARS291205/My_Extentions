@@ -8,7 +8,8 @@ import yt_dlp
 from urllib.parse import urlparse, parse_qs
 
 PORT         = 9876
-DOWNLOAD_DIR = os.path.join(os.path.expanduser("~"), "Downloads", "YT-Music")
+BASE_DIR     = r"D:\Extensions\yt-music-extension"
+DOWNLOAD_DIR = os.path.join(BASE_DIR, "YT-Music")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 jobs        = {}
