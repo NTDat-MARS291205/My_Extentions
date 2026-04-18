@@ -1,0 +1,10 @@
+# Ignore database ở bất kỳ đâu trong project
+**/library.db
+library.db
+
+# Ignore thư mục nhạc tải về
+YT-Music/
+
+# Ignore các file rác của Python
+**/__pycache__/
+*.py[cod]
